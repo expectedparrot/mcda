@@ -128,6 +128,37 @@ def save_json(result: dict) -> None:
     path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def write_mermaid_outranking_graph(result: dict, filename: str) -> None:
+    alternatives = list(PERFORMANCE)
+    lines = [
+        "flowchart LR",
+        "  balanced_vendor[Balanced Vendor]",
+        "  budget_vendor[Budget Vendor]",
+        "  premium_vendor[Premium Vendor]",
+        "  current_vendor[(Current Vendor<br/>reference)]",
+        "  classDef candidate fill:#eef6ff,stroke:#4C78A8,stroke-width:1px;",
+        "  classDef reference fill:#f7f7f7,stroke:#666,stroke-dasharray:4 3;",
+        "  class balanced_vendor,budget_vendor,premium_vendor candidate;",
+        "  class current_vendor reference;",
+    ]
+    seen_pairs: set[tuple[str, str]] = set()
+    for source in alternatives:
+        for target in alternatives:
+            if source == target:
+                continue
+            relation = result["relations"][source][target]
+            if relation == "outranks":
+                credibility = result["credibility"][source][target]
+                lines.append(f"  {source} -->|{credibility:.2f}| {target}")
+            elif relation == "indifferent":
+                pair = tuple(sorted([source, target]))
+                if pair not in seen_pairs:
+                    credibility = min(result["credibility"][source][target], result["credibility"][target][source])
+                    lines.append(f"  {source} <-->|indifferent {credibility:.2f}| {target}")
+                    seen_pairs.add(pair)
+    (ROOT / "docs" / filename).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def normalized_performance(result: dict) -> dict[str, dict[str, float]]:
     perf = result["resolved_perf"]
     normalized = {alt: {} for alt in perf}
@@ -270,6 +301,7 @@ def main() -> None:
     plot_ranking(result)
     plot_score_contributions(result)
     electre_result = mcda(["analyze", "run", "--method", "electre-iii", "--lambda", "0.75"])
+    write_mermaid_outranking_graph(electre_result, "vendor_selection_outranking_graph.mmd")
     plot_credibility(electre_result)
     print_summary(result)
 

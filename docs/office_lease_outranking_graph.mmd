@@ -1,0 +1,13 @@
+flowchart LR
+  downtown_loft[Downtown Loft]
+  midtown_suite[Midtown Suite]
+  suburban_campus[Suburban Campus]
+  current_office[(Current Office<br/>reference)]
+  classDef candidate fill:#eef6ff,stroke:#4C78A8,stroke-width:1px;
+  classDef reference fill:#f7f7f7,stroke:#666,stroke-dasharray:4 3;
+  class downtown_loft,midtown_suite,suburban_campus candidate;
+  class current_office reference;
+  midtown_suite -->|1.00| current_office
+  suburban_campus -->|0.75| current_office
+  %% No arrows among the three candidate offices means ELECTRE III did not find a decisive outranking relation there.
+  %% Downtown Loft is also incomparable with Current Office at lambda 0.75.

@@ -161,6 +161,43 @@ def save_weighted_sum_json(result: dict) -> None:
     path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def write_mermaid_outranking_graph(result: dict, filename: str) -> None:
+    alternatives = list(PERFORMANCE)
+    lines = [
+        "flowchart LR",
+        "  downtown_loft[Downtown Loft]",
+        "  midtown_suite[Midtown Suite]",
+        "  suburban_campus[Suburban Campus]",
+        "  current_office[(Current Office<br/>reference)]",
+        "  classDef candidate fill:#eef6ff,stroke:#4C78A8,stroke-width:1px;",
+        "  classDef reference fill:#f7f7f7,stroke:#666,stroke-dasharray:4 3;",
+        "  class downtown_loft,midtown_suite,suburban_campus candidate;",
+        "  class current_office reference;",
+    ]
+    seen_pairs: set[tuple[str, str]] = set()
+    for source in alternatives:
+        for target in alternatives:
+            if source == target:
+                continue
+            relation = result["relations"][source][target]
+            if relation == "outranks":
+                credibility = result["credibility"][source][target]
+                lines.append(f"  {source} -->|{credibility:.2f}| {target}")
+            elif relation == "indifferent":
+                pair = tuple(sorted([source, target]))
+                if pair not in seen_pairs:
+                    credibility = min(result["credibility"][source][target], result["credibility"][target][source])
+                    lines.append(f"  {source} <-->|indifferent {credibility:.2f}| {target}")
+                    seen_pairs.add(pair)
+    lines.extend(
+        [
+            "  %% No arrows among the three candidate offices means ELECTRE III did not find a decisive outranking relation there.",
+            "  %% Downtown Loft is also incomparable with Current Office at lambda 0.75.",
+        ]
+    )
+    (ROOT / "docs" / filename).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def plot_weights(result: dict) -> None:
     weights = result["resolved_weights"]
     criteria = list(weights)
@@ -392,6 +429,7 @@ def main() -> None:
     weighted_sum = mcda(["analyze", "run", "--method", "weighted-sum"])
     save_json(result)
     save_weighted_sum_json(weighted_sum)
+    write_mermaid_outranking_graph(result, "office_lease_outranking_graph.mmd")
     plot_weights(result)
     plot_performance(result)
     plot_credibility(result)

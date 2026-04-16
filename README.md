@@ -904,6 +904,7 @@ The reusable outputs are:
 
 ```text
 docs/vendor_selection_result.json
+docs/vendor_selection_outranking_graph.mmd
 docs/figures/vendor_selection_weights.png
 docs/figures/vendor_selection_normalized_performance.png
 docs/figures/vendor_selection_score_contributions.png
@@ -989,12 +990,32 @@ the stated weights and normalized performance values.
 
 ### ELECTRE Cross-Check
 
+The same vendor data can be cross-checked with ELECTRE III. A network view is often
+clearer than a heatmap because ELECTRE credibility is directional: an arrow means the
+source alternative credibly outranks the target at the selected lambda.
+
+```mermaid
+flowchart LR
+  balanced_vendor[Balanced Vendor]
+  budget_vendor[Budget Vendor]
+  premium_vendor[Premium Vendor]
+  current_vendor[(Current Vendor<br/>reference)]
+  classDef candidate fill:#eef6ff,stroke:#4C78A8,stroke-width:1px;
+  classDef reference fill:#f7f7f7,stroke:#666,stroke-dasharray:4 3;
+  class balanced_vendor,budget_vendor,premium_vendor candidate;
+  class current_vendor reference;
+  balanced_vendor -->|0.80| budget_vendor
+  balanced_vendor -->|1.00| premium_vendor
+  balanced_vendor -->|0.85| current_vendor
+  current_vendor -->|0.80| budget_vendor
+```
+
 ![Vendor credibility](docs/figures/vendor_selection_credibility.png)
 
-The vendor demo also generates an ELECTRE III credibility matrix as a cross-check. It
-shows that Balanced Vendor credibly outranks Budget Vendor, Premium Vendor, and Current
-Vendor at the default cutoff. That makes the recommendation more robust than a score table
-alone.
+The network shows that Balanced Vendor credibly outranks Budget Vendor, Premium Vendor,
+and Current Vendor at the default cutoff. That makes the recommendation more robust than
+a score table alone. The heatmap preserves the underlying credibility values for readers
+who want the full pairwise detail.
 
 ---
 
@@ -1021,6 +1042,7 @@ That project is ignored by Git. The reusable outputs are written here:
 docs/office_lease_result.json
 docs/office_lease_weighted_sum_result.json
 docs/office_lease_lambda_sweep.json
+docs/office_lease_outranking_graph.mmd
 docs/figures/
 ```
 
@@ -1127,9 +1149,30 @@ def normalized_performance(result: dict) -> dict[str, dict[str, float]]:
 
 ### Credibility Matrix
 
+The best summary of the office ELECTRE result is the outranking network:
+
+```mermaid
+flowchart LR
+  downtown_loft[Downtown Loft]
+  midtown_suite[Midtown Suite]
+  suburban_campus[Suburban Campus]
+  current_office[(Current Office<br/>reference)]
+  classDef candidate fill:#eef6ff,stroke:#4C78A8,stroke-width:1px;
+  classDef reference fill:#f7f7f7,stroke:#666,stroke-dasharray:4 3;
+  class downtown_loft,midtown_suite,suburban_campus candidate;
+  class current_office reference;
+  midtown_suite -->|1.00| current_office
+  suburban_campus -->|0.75| current_office
+```
+
+There are no arrows among the three candidate offices, which means ELECTRE III did not
+find a decisive outranking relation between them at lambda `0.75`. That communicates the
+core result more directly than the numeric matrix: two candidate offices beat the current
+office, but the new-office choice remains unresolved.
+
 ![Credibility matrix](docs/figures/office_lease_credibility.png)
 
-The credibility matrix is the core ELECTRE III output. Each cell answers:
+The credibility matrix is still useful as the detailed diagnostic view. Each cell answers:
 
 ```text
 How credible is it that the row alternative outranks the column alternative?
