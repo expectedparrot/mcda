@@ -1,0 +1,66 @@
+[
+  {
+    "candidate_rank_groups": 2,
+    "incomparable": 2,
+    "indifferent": 4,
+    "lambda": 0.55,
+    "outranks": 3,
+    "top_candidate_group_size": 2
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 6,
+    "indifferent": 0,
+    "lambda": 0.6,
+    "outranks": 3,
+    "top_candidate_group_size": 3
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 6,
+    "indifferent": 0,
+    "lambda": 0.65,
+    "outranks": 3,
+    "top_candidate_group_size": 3
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 6,
+    "indifferent": 0,
+    "lambda": 0.7,
+    "outranks": 3,
+    "top_candidate_group_size": 3
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 8,
+    "indifferent": 0,
+    "lambda": 0.75,
+    "outranks": 2,
+    "top_candidate_group_size": 3
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 10,
+    "indifferent": 0,
+    "lambda": 0.8,
+    "outranks": 1,
+    "top_candidate_group_size": 3
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 10,
+    "indifferent": 0,
+    "lambda": 0.85,
+    "outranks": 1,
+    "top_candidate_group_size": 3
+  },
+  {
+    "candidate_rank_groups": 1,
+    "incomparable": 10,
+    "indifferent": 0,
+    "lambda": 0.9,
+    "outranks": 1,
+    "top_candidate_group_size": 3
+  }
+]

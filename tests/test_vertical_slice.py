@@ -54,6 +54,28 @@ def test_session_stamps_records(tmp_path: Path) -> None:
     assert not (project / ".mcda" / ".current-session").exists()
 
 
+def test_weighted_sum_does_not_require_thresholds(tmp_path: Path) -> None:
+    project = tmp_path / "vendor_selection"
+    run_cmd(["init", str(project)])
+    run_project(["participant", "add", "ops", "Operations Lead"], project)
+    run_project(["alt", "add", "balanced_vendor", "Balanced Vendor", "--type", "candidate"], project)
+    run_project(["alt", "add", "budget_vendor", "Budget Vendor", "--type", "candidate"], project)
+    run_project(["crit", "add", "annual_cost", "Annual cost", "--direction", "min", "--unit", "thousands USD"], project)
+    run_project(["crit", "add", "security", "Security", "--direction", "max", "--unit", "score"], project)
+    run_project(["weights", "set", "ops", "annual_cost", "20"], project)
+    run_project(["weights", "set", "ops", "security", "80"], project)
+    run_project(["perf", "set", "ops", "balanced_vendor", "annual_cost", "115"], project)
+    run_project(["perf", "set", "ops", "balanced_vendor", "security", "94"], project)
+    run_project(["perf", "set", "ops", "budget_vendor", "annual_cost", "80"], project)
+    run_project(["perf", "set", "ops", "budget_vendor", "security", "74"], project)
+
+    result = run_project(["analyze", "run", "--method", "weighted-sum"], project)["data"]
+    assert result["method"] == "weighted-sum"
+    assert result["resolved_thresholds"] == {}
+    assert result["candidate_ranking"][0]["alternatives"] == ["balanced_vendor"]
+    assert result["scores"]["balanced_vendor"] > result["scores"]["budget_vendor"]
+
+
 def test_office_lease_vertical_slice(tmp_path: Path) -> None:
     project = tmp_path / "office_lease_selection"
     run_cmd(["init", str(project), "--description", "Select the best office lease."])

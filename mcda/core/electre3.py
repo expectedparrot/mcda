@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from .ranking import filter_ranking
+
 
 def delta(a_value: float, b_value: float, direction: str) -> float:
     if direction == "max":
@@ -94,8 +96,8 @@ def analyze(
         "credibility": dict(credibility),
         "relations": dict(relations),
         "distillation": {"descending": [item["alternatives"] for item in final], "ascending": [item["alternatives"] for item in final], "final": final},
-        "candidate_ranking": _filter_ranking(final, candidate_ids),
-        "reference_ranking": _filter_ranking(final, reference_ids),
+        "candidate_ranking": filter_ranking(final, candidate_ids),
+        "reference_ranking": filter_ranking(final, reference_ids),
     }
 
 
@@ -117,14 +119,3 @@ def _rank_from_relations(alt_ids: list[str], relations: dict[str, dict[str, str]
         remaining.difference_update(top)
         rank += 1
     return ranking
-
-
-def _filter_ranking(ranking: list[dict], allowed: set[str]) -> list[dict]:
-    filtered = []
-    rank = 1
-    for group in ranking:
-        alternatives = [alt for alt in group["alternatives"] if alt in allowed]
-        if alternatives:
-            filtered.append({"rank": rank, "alternatives": alternatives})
-            rank += 1
-    return filtered

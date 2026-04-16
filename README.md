@@ -1,13 +1,18 @@
 # MCDA CLI
 
 `mcda` is a JSON-first command-line tool for multi-criteria decision analysis. The current
-implementation supports a complete vertical slice for ELECTRE III:
+implementation supports two analysis methods:
+
+- `weighted-sum`: normalizes each criterion, applies resolved weights, and returns a clear
+  score-based ranking.
+- `electre-iii`: uses thresholds, vetoes, and outranking credibility to expose cases where
+  options are not cleanly comparable.
 
 - Create an MCDA project.
 - Add participants, alternatives, and criteria.
 - Record participant weights, thresholds, and performance scores.
 - Aggregate participant inputs.
-- Run ELECTRE III.
+- Run weighted-sum or ELECTRE III analysis.
 - Inspect the resulting candidate ranking.
 
 Generated project data is stored under a project-local `.mcda/` directory. The surrounding
@@ -192,6 +197,28 @@ Default strategies:
 - thresholds: `median`
 
 You can override these in `analyze run`.
+
+### Analysis Methods
+
+Use weighted-sum when you want a clear score-based recommendation:
+
+```bash
+mcda analyze run --method weighted-sum
+```
+
+Weighted-sum normalizes each criterion to a 0-1 scale, reverses `min` criteria so higher
+normalized values are better, multiplies by resolved weights, and sums the contributions.
+It is easy to explain and always produces a total score.
+
+Use ELECTRE III when thresholds, vetoes, and incomparability matter:
+
+```bash
+mcda analyze run --method electre-iii
+```
+
+ELECTRE III asks whether one alternative credibly outranks another. It may produce a tie
+or incomparability when the evidence does not support a clean ordering. That is often a
+feature, not a failure.
 
 ---
 
@@ -443,28 +470,37 @@ When a session is active, new append-style records include a `session` field.
 
 ### Analysis Commands
 
+Run weighted-sum:
+
+```bash
+mcda analyze run --method weighted-sum
+```
+
 Run ELECTRE III:
 
 ```bash
-mcda analyze run
+mcda analyze run --method electre-iii
 ```
+
+`electre-iii` is the default method, so `mcda analyze run` is equivalent to
+`mcda analyze run --method electre-iii`.
 
 Override aggregation:
 
 ```bash
-mcda analyze run --weights-from median --perf-from confidence-weighted-mean --thresholds-from median
+mcda analyze run --method weighted-sum --weights-from median --perf-from confidence-weighted-mean
 ```
 
 Use one participant for all values:
 
 ```bash
-mcda analyze run --participant alice
+mcda analyze run --method weighted-sum --participant alice
 ```
 
-Override lambda:
+Override lambda for ELECTRE III:
 
 ```bash
-mcda analyze run --lambda 0.8
+mcda analyze run --method electre-iii --lambda 0.8
 ```
 
 Show the latest candidate ranking:
@@ -757,20 +793,37 @@ mcda perf set carol current_office lease_flexibility 45 --confidence 1
 Run ELECTRE III with default aggregation:
 
 ```bash
-mcda analyze run
+mcda analyze run --method electre-iii
 ```
 
-The result JSON includes:
+Because `electre-iii` is currently the default, `mcda analyze run` gives the same result.
+
+Run weighted-sum for a score-based comparison:
+
+```bash
+mcda analyze run --method weighted-sum
+```
+
+Both methods include:
 
 - `resolved_weights`
-- `resolved_thresholds`
 - `resolved_perf`
+- `candidate_ranking`
+- `reference_ranking`
+
+Weighted-sum also includes:
+
+- `normalized_perf`
+- `weighted_contributions`
+- `scores`
+
+ELECTRE III also includes:
+
+- `resolved_thresholds`
 - `concordance`
 - `credibility`
 - `relations`
 - `distillation`
-- `candidate_ranking`
-- `reference_ranking`
 
 To inspect just the default candidate ranking:
 
@@ -809,6 +862,418 @@ mcda analyze run --lambda 0.8
 mcda analyze run --weights-from confidence-weighted-mean
 mcda analyze run --participant alice
 ```
+
+---
+
+## Run The Examples And Generate Analysis Figures
+
+The repository includes runnable Python demos that execute complete decisions, run
+analysis, save result JSON, and generate visualizations.
+
+Run both demos from the repository root:
+
+```bash
+python examples/vendor_selection_demo.py
+python examples/office_lease_demo.py
+```
+
+The two examples show different kinds of output:
+
+- Vendor selection uses weighted-sum to produce a clear recommendation.
+- Office lease selection uses ELECTRE III to show a genuinely ambiguous tradeoff.
+
+---
+
+## Example 1: Clear Recommendation With Weighted-Sum
+
+The vendor selection demo chooses a cloud vendor for production hosting. It evaluates
+three candidate vendors and one reference vendor:
+
+- `balanced_vendor`
+- `budget_vendor`
+- `premium_vendor`
+- `current_vendor`
+
+Run it:
+
+```bash
+python examples/vendor_selection_demo.py
+```
+
+The reusable outputs are:
+
+```text
+docs/vendor_selection_result.json
+docs/figures/vendor_selection_weights.png
+docs/figures/vendor_selection_normalized_performance.png
+docs/figures/vendor_selection_score_contributions.png
+docs/figures/vendor_selection_candidate_ranking.png
+docs/figures/vendor_selection_credibility.png
+```
+
+### Vendor Weights
+
+![Vendor weights](docs/figures/vendor_selection_weights.png)
+
+The resolved weights are:
+
+| Criterion | Weight |
+| --- | ---: |
+| Annual cost | 0.20 |
+| Migration effort | 0.15 |
+| Security | 0.35 |
+| Uptime | 0.30 |
+
+Security and uptime dominate the decision. Cost matters, but it is not enough for the
+cheapest vendor to win if reliability and security are weak.
+
+### Vendor Performance
+
+![Vendor normalized performance](docs/figures/vendor_selection_normalized_performance.png)
+
+The normalized performance heatmap shows the tradeoff:
+
+- Balanced Vendor is strong on uptime, security, and migration effort while staying
+  reasonably priced.
+- Budget Vendor wins on cost but performs poorly on security and uptime.
+- Premium Vendor is excellent on uptime and security but is expensive and harder to
+  migrate to.
+- Current Vendor is easy to keep but weak on security.
+
+### Score Contributions
+
+![Vendor score contributions](docs/figures/vendor_selection_score_contributions.png)
+
+Weighted-sum is useful because it can explain the score. Each stacked bar shows how much
+each criterion contributes to the final score.
+
+The score table from `docs/vendor_selection_result.json` is:
+
+| Alternative | Weighted-sum score | Candidate rank |
+| --- | ---: | ---: |
+| Balanced Vendor | 0.810 | 1 |
+| Premium Vendor | 0.650 | 2 |
+| Budget Vendor | 0.225 | 3 |
+
+The reference vendor, Current Vendor, scores `0.488`. It is included in the result JSON
+for comparison but excluded from the default candidate ranking.
+
+### Clear Ranking
+
+![Vendor candidate ranking](docs/figures/vendor_selection_candidate_ranking.png)
+
+The candidate ranking is:
+
+```json
+[
+  {
+    "rank": 1,
+    "alternatives": ["balanced_vendor"],
+    "score": 0.809699
+  },
+  {
+    "rank": 2,
+    "alternatives": ["premium_vendor"],
+    "score": 0.65
+  },
+  {
+    "rank": 3,
+    "alternatives": ["budget_vendor"],
+    "score": 0.225
+  }
+]
+```
+
+This is the clean recommendation case: Balanced Vendor is the best overall choice under
+the stated weights and normalized performance values.
+
+### ELECTRE Cross-Check
+
+![Vendor credibility](docs/figures/vendor_selection_credibility.png)
+
+The vendor demo also generates an ELECTRE III credibility matrix as a cross-check. It
+shows that Balanced Vendor credibly outranks Budget Vendor, Premium Vendor, and Current
+Vendor at the default cutoff. That makes the recommendation more robust than a score table
+alone.
+
+---
+
+## Example 2: Ambiguous Tradeoff With ELECTRE III
+
+The office lease demo executes the office lease example from above. It produces both a
+weighted-sum score and an ELECTRE III outranking analysis.
+
+Run it from the repository root:
+
+```bash
+python examples/office_lease_demo.py
+```
+
+The script writes a disposable project here:
+
+```text
+examples/output/office_lease_selection/
+```
+
+That project is ignored by Git. The reusable outputs are written here:
+
+```text
+docs/office_lease_result.json
+docs/office_lease_weighted_sum_result.json
+docs/office_lease_lambda_sweep.json
+docs/figures/
+```
+
+The demo script deliberately calls the CLI through `subprocess`, so it exercises the same
+workflow a user would run in a shell. The helper function is:
+
+```python
+def mcda(args: list[str], project: bool = True) -> dict:
+    command = [sys.executable, "-m", "mcda.cli"]
+    if project:
+        command.extend(["--project", str(PROJECT)])
+    command.extend(args)
+    completed = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
+    if completed.returncode != 0:
+        raise RuntimeError(f"Command failed: {' '.join(command)}\n{completed.stdout}\n{completed.stderr}")
+    return json.loads(completed.stdout)["data"]
+```
+
+The result is ordinary JSON, so downstream analysis can use standard Python:
+
+```python
+result = json.loads(Path("docs/office_lease_result.json").read_text())
+weights = result["resolved_weights"]
+credibility = result["credibility"]
+ranking = result["candidate_ranking"]
+```
+
+For the weighted-sum comparison:
+
+```python
+weighted = json.loads(Path("docs/office_lease_weighted_sum_result.json").read_text())
+scores = weighted["scores"]
+```
+
+### Resolved Weights
+
+![Resolved weights](docs/figures/office_lease_weights.png)
+
+The group’s median normalized weights are:
+
+| Criterion | Weight |
+| --- | ---: |
+| Annual cost | 0.30 |
+| Commute time | 0.25 |
+| Space quality | 0.30 |
+| Lease flexibility | 0.15 |
+
+The important point is that the tool records raw participant weights, then resolves them
+into normalized global leaf weights for analysis. In this case, cost and quality carry the
+most influence, commute is close behind, and flexibility matters but has less leverage.
+
+The plotting code is straightforward:
+
+```python
+weights = result["resolved_weights"]
+criteria = list(weights)
+values = [weights[criterion] for criterion in criteria]
+
+fig, ax = plt.subplots(figsize=(8, 4.5))
+ax.bar([DISPLAY_NAMES[c] for c in criteria], values)
+ax.set_ylabel("Resolved global weight")
+ax.set_title("What the group decided matters most")
+fig.tight_layout()
+fig.savefig("docs/figures/office_lease_weights.png", dpi=160)
+```
+
+### Normalized Performance
+
+![Normalized performance](docs/figures/office_lease_normalized_performance.png)
+
+Raw criterion values have different units: thousands of dollars, commute minutes, and
+0-100 scores. For visualization, the demo normalizes each criterion so:
+
+- `1.0` means best observed value on that criterion
+- `0.0` means worst observed value on that criterion
+- `min` criteria are reversed so lower raw values become higher normalized scores
+
+This makes the tradeoffs visible:
+
+- Downtown Loft is excellent on commute and space quality, but poor on cost.
+- Suburban Campus is excellent on cost and flexibility, but poor on commute.
+- Midtown Suite is the compromise option.
+- Current Office is useful as a baseline, but is weak on space quality and flexibility.
+
+The normalization code is:
+
+```python
+def normalized_performance(result: dict) -> dict[str, dict[str, float]]:
+    perf = result["resolved_perf"]
+    normalized = {alt: {} for alt in perf}
+    for criterion_id, spec in CRITERIA.items():
+        values = [perf[alt][criterion_id] for alt in perf]
+        low, high = min(values), max(values)
+        span = high - low or 1
+        for alternative_id in perf:
+            raw = perf[alternative_id][criterion_id]
+            if spec["direction"] == "max":
+                score = (raw - low) / span
+            else:
+                score = (high - raw) / span
+            normalized[alternative_id][criterion_id] = score
+    return normalized
+```
+
+### Credibility Matrix
+
+![Credibility matrix](docs/figures/office_lease_credibility.png)
+
+The credibility matrix is the core ELECTRE III output. Each cell answers:
+
+```text
+How credible is it that the row alternative outranks the column alternative?
+```
+
+At the default lambda of `0.75`, a row alternative only outranks a column alternative when
+its credibility is at least `0.75`.
+
+In the generated result:
+
+- Midtown Suite strongly outranks Current Office with credibility `1.00`.
+- Suburban Campus outranks Current Office at exactly `0.75`.
+- Downtown Loft does not clearly outrank the other candidates because its cost and
+  flexibility weaknesses matter.
+- Suburban Campus does not clearly outrank the other candidates because the commute veto
+  pressure is severe.
+
+This is where ELECTRE differs from a simple weighted average: it can say “these options
+are not cleanly comparable” instead of forcing a fragile total ordering.
+
+### Pairwise Relations
+
+![Pairwise relations](docs/figures/office_lease_relations.png)
+
+The relation matrix converts credibility values into ELECTRE relations:
+
+- `outranks`
+- `outranked by`
+- `indifferent`
+- `incomparable`
+
+For this scenario, the most important relation is that both Midtown Suite and Suburban
+Campus outrank the Current Office reference. That supports the practical conclusion that
+moving is plausibly better than staying put.
+
+Among the three candidates, however, the default model leaves them incomparable. That is
+a useful result: the model is telling the facilitator that the final decision depends on
+a real tradeoff, not a hidden arithmetic winner.
+
+### Candidate Ranking
+
+![Candidate ranking](docs/figures/office_lease_candidate_ranking.png)
+
+The default candidate ranking is:
+
+```json
+[
+  {
+    "rank": 1,
+    "alternatives": [
+      "downtown_loft",
+      "midtown_suite",
+      "suburban_campus"
+    ]
+  }
+]
+```
+
+This does not mean the three offices are identical. It means that, under the default
+lambda and thresholds, none of the candidates decisively outranks the others.
+
+That gives the decision-maker a concrete next step:
+
+- revisit the commute veto threshold
+- test a different lambda
+- ask whether cost or quality should receive more weight
+- collect more evidence on space quality or flexibility
+- make an explicit managerial judgment among the unresolved candidates
+
+### Weighted-Sum Comparison
+
+![Office weighted-sum scores](docs/figures/office_lease_weighted_sum_scores.png)
+
+Weighted-sum does produce a total order for the same office data:
+
+| Alternative | Weighted-sum score | Candidate rank |
+| --- | ---: | ---: |
+| Downtown Loft | 0.585 | 1 |
+| Midtown Suite | 0.571 | 2 |
+| Suburban Campus | 0.500 | 3 |
+
+This is useful, but the tiny gap between Downtown Loft and Midtown Suite is a warning.
+The ELECTRE analysis explains why the total order should not be overinterpreted: the
+options make different tradeoffs, and no candidate decisively outranks the others at the
+chosen thresholds and lambda.
+
+### Lambda Sensitivity
+
+![Lambda sensitivity](docs/figures/office_lease_lambda_sensitivity.png)
+
+The demo also reruns the analysis over several lambda values:
+
+```python
+rows = []
+for lambda_value in [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]:
+    result = mcda(["analyze", "run", "--lambda", f"{lambda_value:.2f}"])
+    relations = [
+        relation
+        for source, targets in result["relations"].items()
+        for target, relation in targets.items()
+        if source != target
+    ]
+    rows.append(
+        {
+            "lambda": lambda_value,
+            "outranks": relations.count("outranks"),
+            "incomparable": relations.count("incomparable"),
+            "top_candidate_group_size": len(result["candidate_ranking"][0]["alternatives"]),
+        }
+    )
+```
+
+The sweep shows how demanding the outranking standard is:
+
+| Lambda | Outranking directions | Incomparable directions | Top candidate group size |
+| ---: | ---: | ---: | ---: |
+| 0.55 | 3 | 2 | 2 |
+| 0.60 | 3 | 6 | 3 |
+| 0.65 | 3 | 6 | 3 |
+| 0.70 | 3 | 6 | 3 |
+| 0.75 | 2 | 8 | 3 |
+| 0.80 | 1 | 10 | 3 |
+| 0.85 | 1 | 10 | 3 |
+| 0.90 | 1 | 10 | 3 |
+
+As lambda rises, the model requires stronger evidence before saying one option outranks
+another. Incomparability increases. This is useful in deliberation because it separates
+robust conclusions from conclusions that depend on an aggressive cutoff.
+
+### What The Approach Delivers
+
+For this example, the tool does not produce a simplistic “winner.” It produces a structured
+decision picture:
+
+- The group’s resolved priorities are explicit.
+- The performance tradeoffs are visible criterion by criterion.
+- The current office is beaten by plausible new options, so moving looks justified.
+- The three new candidate offices remain meaningfully hard to compare.
+- The final choice should focus on the unresolved tradeoff: pay more for Downtown Loft’s
+  commute and quality, accept Midtown Suite’s compromise, or choose Suburban Campus for
+  cost and flexibility despite the commute burden.
+
+That is the point of the approach: it narrows the decision, exposes the tradeoffs, and
+shows where judgment is still needed.
 
 ---
 
@@ -853,6 +1318,7 @@ Implemented:
 - performance records and abstentions
 - sessions
 - policy listing and setting
+- weighted-sum analysis
 - ELECTRE III analysis
 - latest-result candidate ranking
 
@@ -866,7 +1332,7 @@ Planned:
 - stricter all-issues-at-once validation
 - removal commands
 - more complete policy behavior
-- additional ELECTRE methods
+- additional MCDA methods
 
 ---
 
@@ -885,6 +1351,6 @@ The current test suite exercises the first vertical slice:
 - session stamping
 - office lease scenario setup
 - hierarchical median weight aggregation
+- weighted-sum analysis
 - ELECTRE III analysis
 - candidate/reference ranking separation
-

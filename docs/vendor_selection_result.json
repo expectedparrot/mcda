@@ -1,0 +1,163 @@
+{
+  "aggregation": {
+    "perf": "confidence-weighted-mean",
+    "thresholds": "median",
+    "weights": "median"
+  },
+  "candidate_ranking": [
+    {
+      "alternatives": [
+        "balanced_vendor"
+      ],
+      "rank": 1,
+      "score": 0.809699
+    },
+    {
+      "alternatives": [
+        "premium_vendor"
+      ],
+      "rank": 2,
+      "score": 0.65
+    },
+    {
+      "alternatives": [
+        "budget_vendor"
+      ],
+      "rank": 3,
+      "score": 0.225
+    }
+  ],
+  "id": "20260416T085220556173Z_f3f27d65_weighted_sum",
+  "method": "weighted-sum",
+  "normalized_perf": {
+    "balanced_vendor": {
+      "annual_cost": 0.65,
+      "migration_effort": 0.5,
+      "security": 0.909091,
+      "uptime": 0.955056
+    },
+    "budget_vendor": {
+      "annual_cost": 1.0,
+      "migration_effort": 0.166667,
+      "security": 0.0,
+      "uptime": 0.0
+    },
+    "current_vendor": {
+      "annual_cost": 0.7,
+      "migration_effort": 1.0,
+      "security": 0.181818,
+      "uptime": 0.449438
+    },
+    "premium_vendor": {
+      "annual_cost": 0.0,
+      "migration_effort": 0.0,
+      "security": 1.0,
+      "uptime": 1.0
+    }
+  },
+  "ranking": [
+    {
+      "alternatives": [
+        "balanced_vendor"
+      ],
+      "rank": 1,
+      "score": 0.809699
+    },
+    {
+      "alternatives": [
+        "premium_vendor"
+      ],
+      "rank": 2,
+      "score": 0.65
+    },
+    {
+      "alternatives": [
+        "current_vendor"
+      ],
+      "rank": 3,
+      "score": 0.488467
+    },
+    {
+      "alternatives": [
+        "budget_vendor"
+      ],
+      "rank": 4,
+      "score": 0.225
+    }
+  ],
+  "reference_ranking": [
+    {
+      "alternatives": [
+        "current_vendor"
+      ],
+      "rank": 1,
+      "score": 0.488467
+    }
+  ],
+  "resolved_perf": {
+    "balanced_vendor": {
+      "annual_cost": 115.0,
+      "migration_effort": 3.0,
+      "security": 94.0,
+      "uptime": 99.95
+    },
+    "budget_vendor": {
+      "annual_cost": 80.0,
+      "migration_effort": 5.0,
+      "security": 74.0,
+      "uptime": 99.09999999999998
+    },
+    "current_vendor": {
+      "annual_cost": 110.0,
+      "migration_effort": 0.0,
+      "security": 78.0,
+      "uptime": 99.5
+    },
+    "premium_vendor": {
+      "annual_cost": 180.0,
+      "migration_effort": 6.0,
+      "security": 96.0,
+      "uptime": 99.99
+    }
+  },
+  "resolved_thresholds": {},
+  "resolved_weights": {
+    "annual_cost": 0.2,
+    "migration_effort": 0.15,
+    "security": 0.35,
+    "uptime": 0.3
+  },
+  "run_at": "2026-04-16T04:52:20",
+  "scores": {
+    "balanced_vendor": 0.809699,
+    "budget_vendor": 0.225,
+    "current_vendor": 0.488467,
+    "premium_vendor": 0.65
+  },
+  "weighted_contributions": {
+    "balanced_vendor": {
+      "annual_cost": 0.13,
+      "migration_effort": 0.075,
+      "security": 0.318182,
+      "uptime": 0.286517
+    },
+    "budget_vendor": {
+      "annual_cost": 0.2,
+      "migration_effort": 0.025,
+      "security": 0.0,
+      "uptime": 0.0
+    },
+    "current_vendor": {
+      "annual_cost": 0.14,
+      "migration_effort": 0.15,
+      "security": 0.063636,
+      "uptime": 0.134831
+    },
+    "premium_vendor": {
+      "annual_cost": 0.0,
+      "migration_effort": 0.0,
+      "security": 0.35,
+      "uptime": 0.3
+    }
+  }
+}

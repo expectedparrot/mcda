@@ -9,6 +9,7 @@ from mcda.core.electre3 import analyze as electre3_analyze
 from mcda.core.errors import AnalysisError
 from mcda.core.ids import local_iso_now, record_id
 from mcda.core.store import latest_by, list_entities, list_records, read_json, write_json
+from mcda.core.weighted_sum import analyze as weighted_sum_analyze
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -16,6 +17,7 @@ app = typer.Typer(no_args_is_help=True, add_completion=False)
 @app.command("run")
 def run(
     ctx: typer.Context,
+    method: str = typer.Option("electre-iii", "--method"),
     weights_from: str = typer.Option("median", "--weights-from"),
     perf_from: str = typer.Option("confidence-weighted-mean", "--perf-from"),
     thresholds_from: str = typer.Option("median", "--thresholds-from"),
@@ -23,6 +25,8 @@ def run(
     lambda_cut: float | None = typer.Option(None, "--lambda"),
 ) -> None:
     project = ctx_project(ctx)
+    if method not in {"electre-iii", "weighted-sum"}:
+        raise AnalysisError("Unsupported analysis method.", {"method": method, "supported": ["electre-iii", "weighted-sum"]})
     if participant:
         weights_from = perf_from = thresholds_from = f"facilitator:{participant}"
     meta = read_json(project.path("meta.json"))
@@ -39,7 +43,7 @@ def run(
         issues.append("At least one candidate alternative is required.")
     if not leaves:
         issues.append("At least one leaf criterion is required.")
-    if not 0.5 < lambda_value <= 1.0:
+    if method == "electre-iii" and not 0.5 < lambda_value <= 1.0:
         issues.append("lambda must be in (0.5, 1.0].")
     if issues:
         raise AnalysisError("Validation failed.", {"issues": issues})
@@ -59,17 +63,18 @@ def run(
     global_weights = compute_global_weights(criteria, local_weights)
 
     resolved_thresholds = {}
-    for criterion in leaves:
-        entries = {
-            pid: (latest_thresholds.get((pid, criterion["id"])) or (None, None))[1]
-            for pid in participant_ids
-        }
-        resolved, threshold_warnings = aggregate_thresholds(entries, thresholds_from, participants)
-        warnings.extend(threshold_warnings)
-        q, p, v = resolved["q"], resolved["p"], resolved["v"]
-        if q is None or p is None or q < 0 or p < q or (v is not None and v < p):
-            raise AnalysisError("Invalid resolved threshold.", {"criterion": criterion["id"], "threshold": resolved})
-        resolved_thresholds[criterion["id"]] = resolved
+    if method == "electre-iii":
+        for criterion in leaves:
+            entries = {
+                pid: (latest_thresholds.get((pid, criterion["id"])) or (None, None))[1]
+                for pid in participant_ids
+            }
+            resolved, threshold_warnings = aggregate_thresholds(entries, thresholds_from, participants)
+            warnings.extend(threshold_warnings)
+            q, p, v = resolved["q"], resolved["p"], resolved["v"]
+            if q is None or p is None or q < 0 or p < q or (v is not None and v < p):
+                raise AnalysisError("Invalid resolved threshold.", {"criterion": criterion["id"], "threshold": resolved})
+            resolved_thresholds[criterion["id"]] = resolved
 
     resolved_perf = {}
     for alternative in alternatives:
@@ -82,17 +87,21 @@ def run(
             alt_perf[criterion["id"]] = aggregate_values(entries, perf_from, participants, abstention_policy="exclude-participant")
         resolved_perf[alternative["id"]] = alt_perf
 
-    electre = electre3_analyze(alternatives, leaves, global_weights, resolved_thresholds, resolved_perf, lambda_value)
-    rid = record_id("electre-iii")
+    if method == "electre-iii":
+        analysis = electre3_analyze(alternatives, leaves, global_weights, resolved_thresholds, resolved_perf, lambda_value)
+    else:
+        analysis = weighted_sum_analyze(alternatives, leaves, global_weights, resolved_perf)
+
+    rid = record_id(method.replace("-", "_"))
     result = {
         "id": rid,
-        "method": "electre-iii",
+        "method": method,
         "run_at": local_iso_now(),
         "aggregation": {"weights": weights_from, "perf": perf_from, "thresholds": thresholds_from},
         "resolved_weights": global_weights,
         "resolved_thresholds": resolved_thresholds,
         "resolved_perf": resolved_perf,
-        **electre,
+        **analysis,
     }
     write_json(project.path("results", f"{rid}.json"), result)
     output(ctx, result, warnings=warnings)
@@ -105,5 +114,8 @@ def ranking(ctx: typer.Context, include_references: bool = typer.Option(False, "
     if not records:
         raise AnalysisError("No results found.")
     _, result = records[-1]
-    data = result["distillation"]["final"] if include_references else result["candidate_ranking"]
+    if include_references:
+        data = result.get("distillation", {}).get("final") or result.get("ranking")
+    else:
+        data = result["candidate_ranking"]
     output(ctx, data)

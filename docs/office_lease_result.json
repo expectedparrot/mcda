@@ -1,0 +1,186 @@
+{
+  "aggregation": {
+    "perf": "confidence-weighted-mean",
+    "thresholds": "median",
+    "weights": "median"
+  },
+  "candidate_ranking": [
+    {
+      "alternatives": [
+        "downtown_loft",
+        "midtown_suite",
+        "suburban_campus"
+      ],
+      "rank": 1
+    }
+  ],
+  "concordance": {
+    "current_office": {
+      "downtown_loft": 0.375,
+      "midtown_suite": 0.55,
+      "suburban_campus": 0.55
+    },
+    "downtown_loft": {
+      "current_office": 0.7,
+      "midtown_suite": 0.55,
+      "suburban_campus": 0.55
+    },
+    "midtown_suite": {
+      "current_office": 1.0,
+      "downtown_loft": 0.59,
+      "suburban_campus": 0.55
+    },
+    "suburban_campus": {
+      "current_office": 0.75,
+      "downtown_loft": 0.45,
+      "midtown_suite": 0.66
+    }
+  },
+  "credibility": {
+    "current_office": {
+      "downtown_loft": 0.33,
+      "midtown_suite": 0.55,
+      "suburban_campus": 0.305556
+    },
+    "downtown_loft": {
+      "current_office": 0.7,
+      "midtown_suite": 0.55,
+      "suburban_campus": 0.0
+    },
+    "midtown_suite": {
+      "current_office": 1.0,
+      "downtown_loft": 0.59,
+      "suburban_campus": 0.55
+    },
+    "suburban_campus": {
+      "current_office": 0.75,
+      "downtown_loft": 0.0,
+      "midtown_suite": 0.485294
+    }
+  },
+  "distillation": {
+    "ascending": [
+      [
+        "downtown_loft",
+        "midtown_suite",
+        "suburban_campus"
+      ],
+      [
+        "current_office"
+      ]
+    ],
+    "descending": [
+      [
+        "downtown_loft",
+        "midtown_suite",
+        "suburban_campus"
+      ],
+      [
+        "current_office"
+      ]
+    ],
+    "final": [
+      {
+        "alternatives": [
+          "downtown_loft",
+          "midtown_suite",
+          "suburban_campus"
+        ],
+        "rank": 1
+      },
+      {
+        "alternatives": [
+          "current_office"
+        ],
+        "rank": 2
+      }
+    ]
+  },
+  "id": "20260416T085221289041Z_c2552b75_electre_iii",
+  "method": "electre-iii",
+  "reference_ranking": [
+    {
+      "alternatives": [
+        "current_office"
+      ],
+      "rank": 1
+    }
+  ],
+  "relations": {
+    "current_office": {
+      "downtown_loft": "incomparable",
+      "midtown_suite": "outranked-by",
+      "suburban_campus": "outranked-by"
+    },
+    "downtown_loft": {
+      "current_office": "incomparable",
+      "midtown_suite": "incomparable",
+      "suburban_campus": "incomparable"
+    },
+    "midtown_suite": {
+      "current_office": "outranks",
+      "downtown_loft": "incomparable",
+      "suburban_campus": "incomparable"
+    },
+    "suburban_campus": {
+      "current_office": "outranks",
+      "downtown_loft": "incomparable",
+      "midtown_suite": "incomparable"
+    }
+  },
+  "resolved_perf": {
+    "current_office": {
+      "annual_cost": 540.0,
+      "commute_time": 38.0,
+      "lease_flexibility": 45.0,
+      "space_quality": 68.0
+    },
+    "downtown_loft": {
+      "annual_cost": 620.0,
+      "commute_time": 28.0,
+      "lease_flexibility": 55.0,
+      "space_quality": 92.0
+    },
+    "midtown_suite": {
+      "annual_cost": 500.0,
+      "commute_time": 35.0,
+      "lease_flexibility": 70.0,
+      "space_quality": 80.0
+    },
+    "suburban_campus": {
+      "annual_cost": 390.0,
+      "commute_time": 52.0,
+      "lease_flexibility": 88.0,
+      "space_quality": 72.0
+    }
+  },
+  "resolved_thresholds": {
+    "annual_cost": {
+      "p": 75.0,
+      "q": 25.0,
+      "v": 175.0
+    },
+    "commute_time": {
+      "p": 8.0,
+      "q": 3.0,
+      "v": 20.0
+    },
+    "lease_flexibility": {
+      "p": 15.0,
+      "q": 5.0,
+      "v": null
+    },
+    "space_quality": {
+      "p": 15.0,
+      "q": 5.0,
+      "v": 35.0
+    }
+  },
+  "resolved_weights": {
+    "annual_cost": 0.3,
+    "commute_time": 0.25,
+    "lease_flexibility": 0.15,
+    "space_quality": 0.3
+  },
+  "run_at": "2026-04-16T04:52:21"
+}

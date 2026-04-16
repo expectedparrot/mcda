@@ -1,0 +1,163 @@
+{
+  "aggregation": {
+    "perf": "confidence-weighted-mean",
+    "thresholds": "median",
+    "weights": "median"
+  },
+  "candidate_ranking": [
+    {
+      "alternatives": [
+        "downtown_loft"
+      ],
+      "rank": 1,
+      "score": 0.584884
+    },
+    {
+      "alternatives": [
+        "midtown_suite"
+      ],
+      "rank": 2,
+      "score": 0.570814
+    },
+    {
+      "alternatives": [
+        "suburban_campus"
+      ],
+      "rank": 3,
+      "score": 0.5
+    }
+  ],
+  "id": "20260416T085221361875Z_bcf49783_weighted_sum",
+  "method": "weighted-sum",
+  "normalized_perf": {
+    "current_office": {
+      "annual_cost": 0.347826,
+      "commute_time": 0.583333,
+      "lease_flexibility": 0.0,
+      "space_quality": 0.0
+    },
+    "downtown_loft": {
+      "annual_cost": 0.0,
+      "commute_time": 1.0,
+      "lease_flexibility": 0.232558,
+      "space_quality": 1.0
+    },
+    "midtown_suite": {
+      "annual_cost": 0.521739,
+      "commute_time": 0.708333,
+      "lease_flexibility": 0.581395,
+      "space_quality": 0.5
+    },
+    "suburban_campus": {
+      "annual_cost": 1.0,
+      "commute_time": 0.0,
+      "lease_flexibility": 1.0,
+      "space_quality": 0.166667
+    }
+  },
+  "ranking": [
+    {
+      "alternatives": [
+        "downtown_loft"
+      ],
+      "rank": 1,
+      "score": 0.584884
+    },
+    {
+      "alternatives": [
+        "midtown_suite"
+      ],
+      "rank": 2,
+      "score": 0.570814
+    },
+    {
+      "alternatives": [
+        "suburban_campus"
+      ],
+      "rank": 3,
+      "score": 0.5
+    },
+    {
+      "alternatives": [
+        "current_office"
+      ],
+      "rank": 4,
+      "score": 0.250181
+    }
+  ],
+  "reference_ranking": [
+    {
+      "alternatives": [
+        "current_office"
+      ],
+      "rank": 1,
+      "score": 0.250181
+    }
+  ],
+  "resolved_perf": {
+    "current_office": {
+      "annual_cost": 540.0,
+      "commute_time": 38.0,
+      "lease_flexibility": 45.0,
+      "space_quality": 68.0
+    },
+    "downtown_loft": {
+      "annual_cost": 620.0,
+      "commute_time": 28.0,
+      "lease_flexibility": 55.0,
+      "space_quality": 92.0
+    },
+    "midtown_suite": {
+      "annual_cost": 500.0,
+      "commute_time": 35.0,
+      "lease_flexibility": 70.0,
+      "space_quality": 80.0
+    },
+    "suburban_campus": {
+      "annual_cost": 390.0,
+      "commute_time": 52.0,
+      "lease_flexibility": 88.0,
+      "space_quality": 72.0
+    }
+  },
+  "resolved_thresholds": {},
+  "resolved_weights": {
+    "annual_cost": 0.3,
+    "commute_time": 0.25,
+    "lease_flexibility": 0.15,
+    "space_quality": 0.3
+  },
+  "run_at": "2026-04-16T04:52:21",
+  "scores": {
+    "current_office": 0.250181,
+    "downtown_loft": 0.584884,
+    "midtown_suite": 0.570814,
+    "suburban_campus": 0.5
+  },
+  "weighted_contributions": {
+    "current_office": {
+      "annual_cost": 0.104348,
+      "commute_time": 0.145833,
+      "lease_flexibility": 0.0,
+      "space_quality": 0.0
+    },
+    "downtown_loft": {
+      "annual_cost": 0.0,
+      "commute_time": 0.25,
+      "lease_flexibility": 0.034884,
+      "space_quality": 0.3
+    },
+    "midtown_suite": {
+      "annual_cost": 0.156522,
+      "commute_time": 0.177083,
+      "lease_flexibility": 0.087209,
+      "space_quality": 0.15
+    },
+    "suburban_campus": {
+      "annual_cost": 0.3,
+      "commute_time": 0.0,
+      "lease_flexibility": 0.15,
+      "space_quality": 0.05
+    }
+  }
+}
