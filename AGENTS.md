@@ -41,6 +41,11 @@ narrative. After analysis, read `mcda report guide`, then use `mcda report templ
 non-narrative Markdown skeleton. Write the report at `writeup/report.md` using the study's
 existing branding and compilation assets. Do not ask MCDA to synthesize or compile it.
 
+Treat the selected primary analysis as canonical. Participant-specific runs are robustness
+evidence and do not replace it. Use `analyze run --role primary` or
+`analyze primary set <analysis-id>` when the guide reports missing or ambiguous primary
+selection; do not infer importance from result timestamps.
+
 ## Development checks
 
 ```bash

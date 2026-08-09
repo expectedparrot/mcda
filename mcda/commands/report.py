@@ -47,6 +47,7 @@ def build_guide(project) -> dict[str, Any]:
     thresholds = list_records(project, "thresholds")
     performance = list_records(project, "perf")
     analyses = list_records(project, "results")
+    primary_selections = list_records(project, "analysis_selections")
     assessment_paths = sorted(project.path("assessments").glob("*/manifest.json"))
     assessments = [(path, read_json(path)) for path in assessment_paths]
 
@@ -66,10 +67,14 @@ def build_guide(project) -> dict[str, Any]:
     analysis_summaries = []
     for result_id, result in analyses:
         path = project.path("results", f"{result_id}.json")
+        aggregation = result.get("aggregation", {})
+        participant_specific = any(str(value).startswith("facilitator:") for value in aggregation.values())
         analysis_summaries.append({
             "id": result.get("id", result_id), "path": _relative(project, path),
             "method": result.get("method"), "run_at": result.get("run_at"),
-            "aggregation": result.get("aggregation", {}),
+            "role": result.get("role") or ("robustness" if participant_specific else None),
+            "participant": result.get("participant"), "participant_specific": participant_specific,
+            "aggregation": aggregation,
             "candidate_ranking": result.get("candidate_ranking"),
             "reference_ranking": result.get("reference_ranking"),
             "reference_inclusive_ranking": result.get("ranking") or result.get("distillation", {}).get("final"),
@@ -79,7 +84,22 @@ def build_guide(project) -> dict[str, Any]:
             ) if key in result),
             "warnings": result.get("warnings", []),
         })
-    current = analysis_summaries[-1] if analysis_summaries else None
+    analyses_by_id = {item["id"]: item for item in analysis_summaries}
+    selected_id = primary_selections[-1][1].get("analysis_id") if primary_selections else None
+    primary = analyses_by_id.get(selected_id) if selected_id else None
+    primary_selection_problem = None
+    inferred_primary = False
+    if selected_id and primary is None:
+        primary_selection_problem = "missing_selected_analysis"
+    elif not selected_id and analysis_summaries:
+        eligible = [item for item in analysis_summaries if not item["participant_specific"]]
+        if len(eligible) == 1:
+            primary = eligible[0]
+            inferred_primary = True
+        elif len(eligible) > 1:
+            primary_selection_problem = "ambiguous_primary"
+        else:
+            primary_selection_problem = "no_eligible_primary"
 
     assessment_summaries = [{
         "id": manifest.get("id"), "manifest_path": _relative(project, path),
@@ -106,22 +126,34 @@ def build_guide(project) -> dict[str, Any]:
         })
     if not analyses:
         blockers.append({"code": "no_completed_analysis", "next_step": "mcda analyze run --method weighted-sum"})
-    if current is not None and not current.get("candidate_ranking"):
-        blockers.append({"code": "no_candidate_ranking", "analysis_id": current["id"]})
+    if primary_selection_problem:
+        blockers.append({
+            "code": primary_selection_problem, "selected_analysis_id": selected_id,
+            "eligible_analysis_ids": [item["id"] for item in analysis_summaries if not item["participant_specific"]],
+            "next_step": "mcda analyze primary set <analysis-id>",
+        })
+    if primary is not None and not primary.get("candidate_ranking"):
+        blockers.append({"code": "no_candidate_ranking", "analysis_id": primary["id"]})
     references = [item for item in alternatives if item.get("type") == "reference"]
-    if current is not None and references and current.get("reference_inclusive_ranking") is None:
-        blockers.append({"code": "reference_inclusive_result_absent", "analysis_id": current["id"]})
+    if primary is not None and references and primary.get("reference_inclusive_ranking") is None:
+        blockers.append({"code": "reference_inclusive_result_absent", "analysis_id": primary["id"]})
 
     warnings = []
     if not references:
         warnings.append({"code": "no_reference_alternative", "message": "No status-quo/reference comparison is defined."})
     if len(analyses) > 1:
         warnings.append({
-            "code": "multiple_analyses", "message": "Use current_analysis as canonical; compare older runs only when relevant.",
+            "code": "multiple_analyses", "message": "Use primary_analysis as canonical; treat other runs according to their roles.",
             "analysis_ids": [item["id"] for item in analysis_summaries],
         })
-    if current:
-        warnings.extend(current.get("warnings", []))
+    if inferred_primary:
+        warnings.append({
+            "code": "legacy_primary_inferred",
+            "message": "Exactly one eligible pooled analysis was inferred as primary; select it explicitly to record provenance.",
+            "analysis_id": primary["id"], "next_step": f"mcda analyze primary set {primary['id']}",
+        })
+    if primary:
+        warnings.extend(primary.get("warnings", []))
 
     next_steps = [item["next_step"] for item in blockers if item.get("next_step")]
     if not blockers:
@@ -140,26 +172,31 @@ def build_guide(project) -> dict[str, Any]:
             "criteria": {"path": ".mcda/criteria/", "items": criteria},
             "participants": {"path": ".mcda/participants/", "items": participants},
             "weights": {"path": ".mcda/weights/", "raw_records": len(weights),
-                        "resolved_in": current["path"] if current else None},
+                        "resolved_in": primary["path"] if primary else None},
             "thresholds": {"path": ".mcda/thresholds/", "raw_records": len(thresholds),
-                           "resolved_in": current["path"] if current else None},
+                           "resolved_in": primary["path"] if primary else None},
             "performance": {"path": ".mcda/perf/", "raw_records": len(performance),
                             "latest_observed_cells": len(observed_cells), "expected_cells": len(expected_cells),
                             "missing_cells": len(missing_cells), "source_counts": dict(sorted(source_counts.items())),
                             "assessment_record_counts": dict(sorted(assessment_counts.items()))},
             "assessments": assessment_summaries, "analyses": analysis_summaries,
+            "primary_selection": {"path": ".mcda/analysis_selections/", "events": len(primary_selections),
+                                  "latest": primary_selections[-1][1] if primary_selections else None},
         },
         "decision_handoff": {
-            "canonical_analysis_id": current["id"] if current else None,
-            "canonical_analysis_path": current["path"] if current else None,
-            "current_analysis": current,
-            "analysis_history": [{"id": item["id"], "method": item["method"], "path": item["path"]}
+            "canonical_analysis_id": primary["id"] if primary else None,
+            "canonical_analysis_path": primary["path"] if primary else None,
+            "primary_analysis": primary, "current_analysis": primary,
+            "robustness_analyses": [item for item in analysis_summaries
+                                    if item["role"] in {"robustness", "sensitivity", "alternative-method"}],
+            "analysis_history": [{"id": item["id"], "method": item["method"], "role": item["role"],
+                                  "path": item["path"]}
                                  for item in analysis_summaries],
             "participant_specific_analyses": [
                 {"id": item["id"], "method": item["method"], "path": item["path"],
                  "aggregation": item["aggregation"]}
                 for item in analysis_summaries
-                if any(str(value).startswith("facilitator:") for value in item["aggregation"].values())
+                if item["participant_specific"]
             ],
         },
         "recommended_sections": SECTIONS, "writing_rules": WRITING_RULES,

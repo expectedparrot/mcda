@@ -14,6 +14,24 @@ def _state(project):
     assessments = sorted(project.path("assessments").glob("*/manifest.json"))
     assessment_states = [read_json(path) for path in assessments]
     results = sorted(project.path("results").glob("*.json"))
+    analysis_records = [(path.stem, read_json(path)) for path in results]
+    selection_records = list_records(project, "analysis_selections")
+    selected_primary = selection_records[-1][1].get("analysis_id") if selection_records else None
+    result_ids = {item[0] for item in analysis_records}
+    pooled_ids = [rid for rid, result in analysis_records
+                  if not any(str(value).startswith("facilitator:")
+                             for value in result.get("aggregation", {}).values())]
+    if selected_primary in result_ids:
+        primary_status = "explicit"
+    elif selected_primary:
+        primary_status = "missing"
+    elif len(pooled_ids) == 1:
+        primary_status = "inferred"
+        selected_primary = pooled_ids[0]
+    elif len(pooled_ids) > 1:
+        primary_status = "ambiguous"
+    else:
+        primary_status = "absent"
     performance_keys = {
         (record.get("participant"), record.get("alternative"), record.get("criterion"))
         for _, record in list_records(project, "perf") if not record.get("abstention")
@@ -33,6 +51,9 @@ def _state(project):
         "assessment_manifests": [str(path) for path in assessments],
         "assessments": [{"id": item["id"], "status": item.get("status", "awaiting_results"),
                          "coverage": item.get("coverage")} for item in assessment_states],
+        "primary_analysis": {"status": primary_status, "analysis_id": selected_primary,
+                             "eligible_analysis_ids": pooled_ids,
+                             "selection_events": len(selection_records)},
     }
 
 
@@ -52,6 +73,11 @@ def _recommendation(state: dict) -> tuple[str, str]:
         return "ep run <jobs.ep> --output <results.ep>", "Run generated Jobs outside mcda, then ingest the Results package."
     if not counts["analyses"]:
         return "mcda analyze run --method weighted-sum", "Analyze the collected evidence."
+    primary = state["primary_analysis"]
+    if primary["status"] == "inferred":
+        return f"mcda analyze primary set {primary['analysis_id']}", "Record the inferred legacy primary explicitly."
+    if primary["status"] in {"ambiguous", "missing", "absent"}:
+        return "mcda analyze primary set <analysis-id>", "Select the canonical primary analysis before report handoff."
     return "mcda report guide", "Hand the authoritative decision evidence to the report-writing agent."
 
 

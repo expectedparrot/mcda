@@ -165,6 +165,33 @@ def test_id_validation_rejects_hyphen(tmp_path: Path) -> None:
     assert "Invalid alternative id" in str(result.exception)
 
 
+@pytest.mark.parametrize("supplied,canonical", [
+    ("min", "min"), ("minimize", "min"), ("minimise", "min"),
+    ("max", "max"), ("maximize", "max"), ("maximise", "max"),
+    ("MAXIMIZE", "max"), ("Minimise", "min"),
+])
+def test_criterion_direction_aliases(tmp_path: Path, supplied: str, canonical: str) -> None:
+    project = tmp_path / f"direction_{supplied.lower()}"
+    run_cmd(["init", str(project)])
+    criterion = run_project([
+        "crit", "add", "measure", "Measure", "--direction", supplied, "--unit", "points",
+    ], project)["data"]
+    assert criterion["direction"] == canonical
+
+
+def test_invalid_criterion_direction_lists_aliases(tmp_path: Path) -> None:
+    project = tmp_path / "bad_direction"
+    run_cmd(["init", str(project)])
+    result = runner.invoke(app, [
+        "--project", str(project), "crit", "add", "measure", "Measure",
+        "--direction", "up", "--unit", "points",
+    ])
+    assert result.exit_code == 1
+    assert set(result.exception.details["accepted"]) == {
+        "min", "minimize", "minimise", "max", "maximize", "maximise",
+    }
+
+
 def test_session_stamps_records(tmp_path: Path) -> None:
     project = tmp_path / "office_lease_selection"
     run_cmd(["init", str(project)])

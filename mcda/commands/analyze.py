@@ -6,12 +6,40 @@ from mcda.commands.common import ctx_project, output
 from mcda.core.aggregate import aggregate_thresholds, aggregate_values
 from mcda.core.criteria import compute_global_weights, leaf_criteria, validate_tree
 from mcda.core.electre3 import analyze as electre3_analyze
-from mcda.core.errors import AnalysisError
+from mcda.core.errors import AnalysisError, UserError
 from mcda.core.ids import local_iso_now, record_id
-from mcda.core.store import latest_by, list_entities, list_records, read_json, write_json
+from mcda.core.store import append_record, latest_by, list_entities, list_records, read_json, write_json
 from mcda.core.weighted_sum import analyze as weighted_sum_analyze
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
+primary_app = typer.Typer(no_args_is_help=True, add_completion=False)
+app.add_typer(primary_app, name="primary")
+
+ANALYSIS_ROLES = {"primary", "robustness", "sensitivity", "alternative-method", "exploratory"}
+
+
+def selection_records(project):
+    return list_records(project, "analysis_selections")
+
+
+def selected_primary_id(project) -> str | None:
+    records = selection_records(project)
+    return records[-1][1].get("analysis_id") if records else None
+
+
+def select_primary(project, analysis_id: str, reason: str) -> dict:
+    result_path = project.path("results", f"{analysis_id}.json")
+    if not result_path.exists():
+        raise UserError("Cannot select a missing analysis as primary.", {
+            "analysis_id": analysis_id, "available": [rid for rid, _ in list_records(project, "results")],
+        })
+    previous = selected_primary_id(project)
+    event = {
+        "analysis_id": analysis_id, "previous_analysis_id": previous,
+        "selected_at": local_iso_now(), "reason": reason,
+    }
+    event_id, path = append_record(project, "analysis_selections", ["primary", f"analysis_{analysis_id}"], event)
+    return {"id": event_id, "path": str(path), **event}
 
 
 @app.command("run")
@@ -23,10 +51,24 @@ def run(
     thresholds_from: str = typer.Option("median", "--thresholds-from"),
     participant: str | None = typer.Option(None, "--participant"),
     lambda_cut: float | None = typer.Option(None, "--lambda"),
+    role: str | None = typer.Option(None, "--role", help="primary, robustness, sensitivity, alternative-method, or exploratory."),
 ) -> None:
     project = ctx_project(ctx)
     if method not in {"electre-iii", "weighted-sum"}:
         raise AnalysisError("Unsupported analysis method.", {"method": method, "supported": ["electre-iii", "weighted-sum"]})
+    role_was_explicit = role is not None
+    if role is not None:
+        role = role.lower()
+        if role not in ANALYSIS_ROLES:
+            raise AnalysisError("Unsupported analysis role.", {"role": role, "supported": sorted(ANALYSIS_ROLES)})
+    existing_primary = selected_primary_id(project)
+    if role is None:
+        if participant:
+            role = "robustness"
+        elif existing_primary is None:
+            role = "primary"
+        else:
+            role = "alternative-method"
     if participant:
         weights_from = perf_from = thresholds_from = f"facilitator:{participant}"
     meta = read_json(project.path("meta.json"))
@@ -96,6 +138,8 @@ def run(
     result = {
         "id": rid,
         "method": method,
+        "role": role,
+        "participant": participant,
         "run_at": local_iso_now(),
         "aggregation": {"weights": weights_from, "perf": perf_from, "thresholds": thresholds_from},
         "resolved_weights": global_weights,
@@ -105,7 +149,23 @@ def run(
         **analysis,
     }
     write_json(project.path("results", f"{rid}.json"), result)
-    output(ctx, result, warnings=warnings, next_steps=[f"mcda --project {project.root} report guide"])
+    selection = None
+    if role == "primary":
+        selection = select_primary(project, rid, "explicit-role" if role_was_explicit else "first-aggregate-default")
+        result["primary_selection"] = selection
+    result["canonical_analysis_id"] = rid if role == "primary" else selected_primary_id(project)
+    next_steps = [f"mcda --project {project.root} report guide"]
+    if result["canonical_analysis_id"] is None:
+        next_steps = [f"mcda --project {project.root} analyze primary set {rid}"]
+    output(ctx, result, warnings=warnings, next_steps=next_steps)
+
+
+@primary_app.command("set")
+def primary_set(ctx: typer.Context, analysis_id: str) -> None:
+    project = ctx_project(ctx)
+    selection = select_primary(project, analysis_id, "explicit-command")
+    output(ctx, {"primary_analysis_id": analysis_id, "selection": selection},
+           next_steps=[f"mcda --project {project.root} report guide"])
 
 
 @app.command("ranking")

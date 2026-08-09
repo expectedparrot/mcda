@@ -9,20 +9,33 @@ from mcda.core.store import list_entities, read_entity, write_entity
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
+DIRECTION_ALIASES = {
+    "min": "min", "minimize": "min", "minimise": "min",
+    "max": "max", "maximize": "max", "maximise": "max",
+}
+
 
 @app.command("add")
 def add(
     ctx: typer.Context,
     crit_id: str,
     name: str,
-    direction: str = typer.Option(..., "--direction"),
+    direction: str = typer.Option(
+        ..., "--direction",
+        help="Direction: min/max (also minimize/minimise/maximize/maximise; case-insensitive).",
+    ),
     unit: str = typer.Option(..., "--unit"),
     parent: str | None = typer.Option(None, "--parent"),
     description: str = "",
     edit: bool = False,
 ) -> None:
-    if direction not in {"min", "max"}:
-        raise UserError("Criterion direction must be min or max.", {"direction": direction})
+    supplied_direction = direction
+    direction = DIRECTION_ALIASES.get(direction.lower())
+    if direction is None:
+        raise UserError("Unknown criterion direction.", {
+            "direction": supplied_direction, "accepted": sorted(DIRECTION_ALIASES),
+            "stored_values": ["min", "max"],
+        })
     validate_id(crit_id, "criterion id")
     if parent:
         validate_id(parent, "parent criterion id")

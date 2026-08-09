@@ -19,6 +19,7 @@ SUBDIRS = [
     "sensitivity/definitions",
     "sensitivity/results",
     "results",
+    "analysis_selections",
     "decisions",
     "reports",
     "assessments",

@@ -79,6 +79,18 @@ and interpretation rules. `report template` returns headings and evidence placeh
 it does not write conclusions. The calling agent authors `writeup/report.md` and uses the
 study's existing HTML/PDF compilation workflow.
 
+Analysis roles keep robustness runs from silently replacing the main result:
+
+```bash
+mcda -C <project> analyze run --method weighted-sum --role primary
+mcda -C <project> analyze run --method weighted-sum --participant sales --role robustness
+mcda -C <project> analyze primary set <analysis-id>
+```
+
+The first pooled analysis defaults to `primary`; participant-specific runs default to
+`robustness`. Later pooled runs remain non-primary unless explicitly promoted. Selection
+events are retained under `.mcda/analysis_selections/`.
+
 ---
 
 ## Installation
@@ -207,6 +219,9 @@ A criterion can be:
 
 - a leaf criterion, with `direction` of `min` or `max`
 - a group criterion, created with `crit add-group`
+
+Directions are stored as `min` or `max`. The CLI also accepts `minimize`, `minimise`,
+`maximize`, and `maximise`, case-insensitively, and normalizes them on write.
 
 Only leaf criteria receive performance values and thresholds. Groups are used to organize
 criteria and receive local weights.
