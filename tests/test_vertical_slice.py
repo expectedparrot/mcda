@@ -59,6 +59,103 @@ def test_assessment_builds_loadable_edsl_jobs(tmp_path: Path) -> None:
     assert built["next_steps"][0].startswith("ep run ")
 
 
+def test_assessment_subset_ingests_flattened_real_edsl_results_atomically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    edsl = pytest.importorskip("edsl")
+    project = tmp_path / "live_run_regression"
+    run_cmd(["init", str(project)])
+    for alt_id in ["option_a", "option_b"]:
+        run_project(["alt", "add", alt_id, alt_id.replace("_", " ").title()], project)
+    for args in [
+        ["crit", "add", "cost", "Cost", "--direction", "min", "--unit", "USD"],
+        ["crit", "add", "quality", "Quality", "--direction", "max", "--unit", "points"],
+        ["crit", "add", "risk", "Risk", "--direction", "min", "--unit", "points"],
+    ]:
+        run_project(args, project)
+    for participant in ["alice", "bob"]:
+        run_project(["participant", "add", participant, participant.title()], project)
+        for criterion in ["cost", "quality", "risk"]:
+            run_project(["weights", "set", participant, criterion, "1"], project)
+        for alternative, value in [("option_a", "100"), ("option_b", "120")]:
+            run_project(["perf", "set", participant, alternative, "cost", value, "--source", "invoice"], project)
+
+    built = run_project([
+        "assessment", "build", "--id", "subjective", "--criteria", "quality,risk",
+    ], project)["data"]
+    assert built["criteria"] == ["quality", "risk"]
+    assert built["excluded_criteria"] == ["cost"]
+    assert built["expected_answers"] == 8
+
+    jobs = edsl.Jobs.git.load(built["jobs_path"])
+
+    def answer(self, question, scenario):
+        base = 8 if scenario["alternative_id"] == "option_a" else 4
+        return base if question.question_name == "quality" else 10 - base
+
+    for agent in jobs.agents:
+        agent.add_direct_question_answering_method(answer)
+    from edsl.language_models import LanguageModel
+    from edsl.object_store.store import ObjectStore
+    monkeypatch.setattr(ObjectStore, "default_root", staticmethod(lambda: tmp_path / "edsl_objects"))
+    jobs = edsl.Jobs(
+        survey=jobs.survey, agents=jobs.agents, scenarios=jobs.scenarios,
+        models=[LanguageModel.example(test_model=True)],
+    )
+    results = jobs.run(cache=False, disable_remote_inference=True)
+    results_path = project / ".mcda" / "assessments" / "subjective" / "results.ep"
+    results.git.save(str(results_path), message="Create flattened Results ingestion fixture")
+    loaded_rows = edsl.Results.git.load(str(results_path)).to_dicts()
+    assert "quality" in loaded_rows[0]
+    assert "answer.quality" not in loaded_rows[0]
+
+    ingested = run_project([
+        "assessment", "ingest", "subjective", "--results", str(results_path),
+    ], project)["data"]
+    assert ingested["imported_answers"] == 8
+    assert ingested["coverage"]["complete"] is True
+    assert len(run_project(["perf", "show"], project)["data"]) == 12
+    assert run_project(["next"], project)["data"]["recommendation"].startswith("mcda analyze run")
+
+    replay = runner.invoke(app, [
+        "--project", str(project), "assessment", "ingest", "subjective", "--results", str(results_path),
+    ])
+    assert replay.exit_code == 1
+    assert len(run_project(["perf", "show"], project)["data"]) == 12
+
+
+def test_assessment_rejects_partial_rows_without_mutation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from mcda.commands import assessment
+
+    project = tmp_path / "partial"
+    run_cmd(["init", str(project)])
+    run_project(["alt", "add", "option_a", "Option A"], project)
+    run_project(["crit", "add", "quality", "Quality", "--direction", "max", "--unit", "points"], project)
+    run_project(["participant", "add", "alice", "Alice"], project)
+    built = run_project(["assessment", "build", "--id", "round_1"], project)["data"]
+    partial_path = project / "partial.ep"
+    partial_path.touch()
+
+    class PartialResults:
+        class git:
+            @staticmethod
+            def load(path):
+                return PartialResults()
+
+        def to_dicts(self):
+            return [{"participant_id": "alice", "alternative_id": "option_a"}]
+
+    original = assessment._edsl
+    monkeypatch.setattr(assessment, "_edsl", lambda: (*original()[:4], PartialResults, *original()[5:]))
+    result = runner.invoke(app, [
+        "--project", str(project), "assessment", "ingest", "round_1", "--results", str(partial_path),
+    ])
+    assert result.exit_code == 1
+    assert not list((project / ".mcda" / "perf").glob("*.json"))
+    manifest = json.loads(Path(built["manifest_path"]).read_text())
+    assert manifest["results_paths"] == []
+
+
 def test_id_validation_rejects_hyphen(tmp_path: Path) -> None:
     project = tmp_path / "office_lease_selection"
     run_cmd(["init", str(project)])

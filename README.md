@@ -45,6 +45,20 @@ and manifest, then returns the exact external run and ingestion commands. `asses
 ingest` validates the Results package and records numeric answers as auditable performance
 observations. MCDA never executes paid or remote inference itself.
 
+Select only criteria that require agent judgment when factual values are already known:
+
+```bash
+mcda -C <project> assessment build --id round_1 \
+  --criteria implementation_risk,security,integration
+```
+
+Ingestion accepts both nested and flattened EDSL Results representations. It validates
+the complete participant × alternative × selected-criterion grid before writing any
+performance events. Zero, partial, non-numeric, duplicate, or incorrectly attributed
+answers fail without registering the Results package. Use `--allow-partial` only when an
+explicitly incomplete import is intended; the envelope then contains a warning and exact
+coverage diagnostics.
+
 Criterion weights remain explicit decision inputs: record them with `mcda weights set`
 before analysis. The generated assessment elicits alternative performance, not stakeholder
 importance, so those two kinds of judgment stay auditable and distinct.
