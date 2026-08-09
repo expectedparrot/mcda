@@ -52,14 +52,15 @@ def _recommendation(state: dict) -> tuple[str, str]:
         return "ep run <jobs.ep> --output <results.ep>", "Run generated Jobs outside mcda, then ingest the Results package."
     if not counts["analyses"]:
         return "mcda analyze run --method weighted-sum", "Analyze the collected evidence."
-    return "mcda analyze ranking", "Inspect the current decision ranking."
+    return "mcda report guide", "Hand the authoritative decision evidence to the report-writing agent."
 
 
 def capabilities(ctx: typer.Context) -> None:
     output(ctx, {
         "agent_first": True, "json_envelope_schema": "1.0",
         "edsl_boundary": "mcda generates Jobs and ingests Results; it never executes model calls",
-        "commands": ["guide", "next", "assessment build", "assessment ingest", "analyze run"],
+        "commands": ["guide", "next", "assessment build", "assessment ingest", "analyze run",
+                     "report guide", "report template"],
     }, next_steps=["mcda guide"])
 
 
@@ -77,6 +78,7 @@ def guide(ctx: typer.Context) -> None:
             "Run generated .ep Jobs externally with ep run.",
             "Ingest the resulting .ep Results package.",
             "Analyze and inspect the ranking.",
+            "Use report guide to hand authoritative evidence to the calling report-writing agent.",
         ],
         "execution_boundary": "Model inference is external. mcda does not run EDSL Jobs.",
         "state": state, "recommendation": command, "reason": reason,

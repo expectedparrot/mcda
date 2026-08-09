@@ -9,7 +9,7 @@ import typer
 from rich.console import Console
 
 from .commands import alt, analyze, crit, info, init, participant, perf, policy, session, thresholds, weights
-from .commands import assessment, agent
+from .commands import assessment, agent, report
 from .core.errors import McdaError
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -69,6 +69,7 @@ app.add_typer(policy.app, name="policy")
 app.add_typer(session.app, name="session")
 app.add_typer(analyze.app, name="analyze")
 app.add_typer(assessment.app, name="assessment")
+app.add_typer(report.app, name="report")
 
 
 def main() -> None:

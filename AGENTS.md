@@ -21,6 +21,7 @@ mcda -C <project-dir> assessment build --id <assessment-id>
 ep run <jobs.ep> --output <results.ep>
 mcda -C <project-dir> assessment ingest <assessment-id> --results <results.ep>
 mcda -C <project-dir> analyze run --method weighted-sum
+mcda -C <project-dir> report guide
 ```
 
 Inspect the returned job counts and paths before running inference. Let EDSL
@@ -32,6 +33,13 @@ recorded for other criteria. Ingestion is complete-by-default and validates the 
 expected grid before writing. Inspect its observed/expected coverage before advancing.
 Do not use `--allow-partial` unless the user explicitly intends to preserve an incomplete
 result set.
+
+## Report handoff
+
+MCDA owns authoritative decision evidence; the calling research agent owns the final
+narrative. After analysis, read `mcda report guide`, then use `mcda report template` as a
+non-narrative Markdown skeleton. Write the report at `writeup/report.md` using the study's
+existing branding and compilation assets. Do not ask MCDA to synthesize or compile it.
 
 ## Development checks
 

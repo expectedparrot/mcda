@@ -101,10 +101,11 @@ def run(
         "resolved_weights": global_weights,
         "resolved_thresholds": resolved_thresholds,
         "resolved_perf": resolved_perf,
+        "warnings": warnings,
         **analysis,
     }
     write_json(project.path("results", f"{rid}.json"), result)
-    output(ctx, result, warnings=warnings)
+    output(ctx, result, warnings=warnings, next_steps=[f"mcda --project {project.root} report guide"])
 
 
 @app.command("ranking")

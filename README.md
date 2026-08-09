@@ -63,6 +63,22 @@ Criterion weights remain explicit decision inputs: record them with `mcda weight
 before analysis. The generated assessment elicits alternative performance, not stakeholder
 importance, so those two kinds of judgment stay auditable and distinct.
 
+### Report-agent handoff
+
+After analysis, MCDA provides a bounded, read-only evidence handoff while leaving final
+narrative ownership with the calling research agent:
+
+```bash
+mcda -C <project> report guide
+mcda -C <project> report template
+```
+
+`report guide` identifies the canonical analysis, candidates and references, assessment
+coverage, provenance summaries, exact artifact paths, readiness blockers, report assets,
+and interpretation rules. `report template` returns headings and evidence placeholders;
+it does not write conclusions. The calling agent authors `writeup/report.md` and uses the
+study's existing HTML/PDF compilation workflow.
+
 ---
 
 ## Installation
