@@ -9,6 +9,7 @@ import typer
 from rich.console import Console
 
 from .commands import alt, analyze, crit, info, init, participant, perf, policy, session, thresholds, weights
+from .commands import assessment, agent
 from .core.errors import McdaError
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -22,8 +23,20 @@ class CliContext:
         self.quiet = quiet
 
 
+ENVELOPE_SCHEMA_VERSION = "1.0"
+
+
 def emit(data: Any = None, warnings: list[dict] | None = None) -> None:
-    payload = {"data": data, "warnings": warnings or []}
+    payload = {
+        "schema_version": ENVELOPE_SCHEMA_VERSION,
+        "command": "mcda",
+        "status": "ok",
+        "argv": ["mcda", *sys.argv[1:]],
+        "data": data if data is not None else {},
+        "warnings": warnings or [],
+        "errors": [],
+        "next_steps": [],
+    }
     typer.echo(json.dumps(payload, indent=2, sort_keys=True))
 
 
@@ -34,7 +47,7 @@ def emit_human(message: str) -> None:
 @app.callback()
 def callback(
     ctx: typer.Context,
-    project: Path | None = typer.Option(None, "--project", help="Override project root."),
+    project: Path | None = typer.Option(None, "--project", "-C", help="Override project root."),
     human: bool = typer.Option(False, "--human", help="Use human-readable output."),
     quiet: bool = typer.Option(False, "--quiet", help="Suppress non-data human output."),
 ) -> None:
@@ -43,6 +56,9 @@ def callback(
 
 app.command("init")(init.command)
 app.command("info")(info.command)
+app.command("capabilities")(agent.capabilities)
+app.command("guide")(agent.guide)
+app.command("next")(agent.next_command)
 app.add_typer(participant.app, name="participant")
 app.add_typer(alt.app, name="alt")
 app.add_typer(crit.app, name="crit")
@@ -52,6 +68,7 @@ app.add_typer(perf.app, name="perf")
 app.add_typer(policy.app, name="policy")
 app.add_typer(session.app, name="session")
 app.add_typer(analyze.app, name="analyze")
+app.add_typer(assessment.app, name="assessment")
 
 
 def main() -> None:
@@ -60,7 +77,15 @@ def main() -> None:
     except McdaError as exc:
         typer.echo(
             json.dumps(
-                {"error": {"code": exc.code, "message": exc.message, "details": exc.details}},
+                {
+                    "schema_version": ENVELOPE_SCHEMA_VERSION,
+                    "command": "mcda",
+                    "status": "error",
+                    "argv": ["mcda", *sys.argv[1:]],
+                    "data": {}, "warnings": [],
+                    "errors": [{"code": exc.code, "message": exc.message, "details": exc.details}],
+                    "next_steps": [],
+                },
                 indent=2,
                 sort_keys=True,
             ),
@@ -70,7 +95,12 @@ def main() -> None:
     except Exception as exc:
         typer.echo(
             json.dumps(
-                {"error": {"code": "internal_error", "message": str(exc), "details": {}}},
+                {
+                    "schema_version": ENVELOPE_SCHEMA_VERSION, "command": "mcda", "status": "error",
+                    "argv": ["mcda", *sys.argv[1:]], "data": {}, "warnings": [],
+                    "errors": [{"code": "internal_error", "message": str(exc), "details": {}}],
+                    "next_steps": [],
+                },
                 indent=2,
                 sort_keys=True,
             ),

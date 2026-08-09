@@ -1,6 +1,6 @@
 # MCDA CLI
 
-`mcda` is a JSON-first command-line tool for multi-criteria decision analysis. The current
+`mcda` is an agent-first, JSON-enveloped command-line tool for multi-criteria decision analysis. The current
 implementation supports two analysis methods:
 
 - `weighted-sum`: normalizes each criterion, applies resolved weights, and returns a clear
@@ -21,6 +21,33 @@ materials.
 
 This repository is early-stage. The implemented workflow is useful and tested, but import
 commands, reports, briefing generation, and sensitivity analysis are still planned work.
+
+Agents should begin with `mcda -C <project> guide` and call `mcda -C <project> next`
+after each stage. Every successful command returns one stable envelope with
+`schema_version`, `command`, `status`, `argv`, `data`, `warnings`, `errors`, and
+`next_steps`.
+
+### EDSL assessments
+
+MCDA can elicit criterion performance estimates from participant agents while keeping
+model execution outside the package:
+
+```bash
+mcda -C <project> assessment build --id round_1
+ep run <jobs.ep> --output <results.ep>
+mcda -C <project> assessment ingest round_1 --results <results.ep>
+mcda -C <project> analyze run --method weighted-sum
+```
+
+`assessment build` turns project participants into EDSL Agents, alternatives into
+Scenarios, and leaf criteria into numerical questions. It writes a durable Jobs package
+and manifest, then returns the exact external run and ingestion commands. `assessment
+ingest` validates the Results package and records numeric answers as auditable performance
+observations. MCDA never executes paid or remote inference itself.
+
+Criterion weights remain explicit decision inputs: record them with `mcda weights set`
+before analysis. The generated assessment elicits alternative performance, not stakeholder
+importance, so those two kinds of judgment stay auditable and distinct.
 
 ---
 

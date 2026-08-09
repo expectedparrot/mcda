@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from mcda.cli import app
@@ -29,6 +30,33 @@ def test_init_creates_mcda(tmp_path: Path) -> None:
     info = run_project(["info"], project)["data"]
     assert info["project"] == str(project.resolve())
     assert info["counts"]["alternatives"] == 0
+
+
+def test_agent_envelope_and_next(tmp_path: Path) -> None:
+    project = tmp_path / "agent_project"
+    created = run_cmd(["init", str(project)])
+    assert set(created) == {
+        "schema_version", "command", "status", "argv", "data", "warnings", "errors", "next_steps"
+    }
+    recommendation = run_project(["next"], project)
+    assert recommendation["status"] == "ok"
+    assert recommendation["data"]["recommendation"].startswith("mcda alt add")
+    assert recommendation["next_steps"]
+
+
+def test_assessment_builds_loadable_edsl_jobs(tmp_path: Path) -> None:
+    edsl = pytest.importorskip("edsl")
+    project = tmp_path / "agent_assessment"
+    run_cmd(["init", str(project)])
+    run_project(["alt", "add", "option_a", "Option A"], project)
+    run_project(["crit", "add", "quality", "Quality", "--direction", "max", "--unit", "points"], project)
+    run_project(["participant", "add", "reviewer", "Reviewer"], project)
+    built = run_project(["assessment", "build", "--id", "round_1"], project)
+    jobs_path = Path(built["data"]["jobs_path"])
+    assert jobs_path.exists()
+    assert built["data"]["expected_answers"] == 1
+    assert edsl.Jobs.git.load(str(jobs_path)) is not None
+    assert built["next_steps"][0].startswith("ep run ")
 
 
 def test_id_validation_rejects_hyphen(tmp_path: Path) -> None:

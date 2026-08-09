@@ -21,6 +21,7 @@ SUBDIRS = [
     "results",
     "decisions",
     "reports",
+    "assessments",
 ]
 
 
