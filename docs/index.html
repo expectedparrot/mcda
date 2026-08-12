@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical, auditable workflow for multi-criteria decision analysis with MCDA and EDSL Jobs.">
+  <title>Expected Parrot | Multi-Criteria Decision Analysis with MCDA</title>
+  <style>
+    :root{--green:#36794e;--dark:#193d29;--soft:#edf6f0;--ink:#1b211d;--muted:#5e6962;--rule:#dbe5de;--gold:#d69a2d;--red:#b94d56;--blue:#4678aa;--code:#152019;--sidebar:292px;--measure:790px;--serif:Georgia,"Times New Roman",serif;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--mono:"SFMono-Regular",Consolas,monospace}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:#f5f7f6;font:16px/1.68 var(--sans)}
+    #progress{position:fixed;z-index:20;inset:0 auto auto 0;width:0;height:4px;background:var(--gold)}
+    nav{position:fixed;inset:0 auto 0 0;width:var(--sidebar);overflow:auto;padding:22px;color:#e8f3eb;background:var(--dark);font-size:14px}.brand{display:block;margin-bottom:20px;padding:12px 14px;color:var(--ink);background:#fff;border-radius:9px;text-decoration:none}.brand strong{display:block;font:700 19px var(--serif)}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase}nav h2{margin:0 8px 22px;color:#fff;font:600 21px/1.25 var(--serif)}nav .part{margin:19px 8px 5px;color:#a8d5b6;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}nav>a:not(.brand){display:block;padding:5px 8px;color:#d7e9dc;text-decoration:none;border-radius:6px}nav>a:not(.brand):hover{color:#fff;background:#28563a}
+    main{margin-left:var(--sidebar)}article{max-width:930px;margin:auto;padding:48px 54px 110px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.03)}header{padding:56px 0 45px;border-bottom:3px solid var(--green)}.eyebrow{color:var(--green);font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.28}h1{max-width:780px;margin:14px 0 20px;font-size:clamp(40px,6vw,60px);letter-spacing:-.025em}h2{margin:76px 0 22px;padding:12px 0 8px;color:var(--green);font-size:31px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}h3{margin:38px 0 12px;font-size:22px}.dek{max-width:740px;color:var(--muted);font-size:21px;line-height:1.5}.meta{display:flex;flex-wrap:wrap;gap:9px 22px;margin-top:26px;color:var(--muted);font-size:13px}p,ul,ol,pre,table,figure,.callout,.flow{max-width:var(--measure)}a{color:var(--green)}code{padding:.14em .34em;background:#eff3f0;border-radius:4px;font:88% var(--mono)}pre{position:relative;overflow:auto;margin:18px 0 26px;padding:20px 54px 20px 22px;color:#dcebe1;background:var(--code);border-left:4px solid var(--green);border-radius:8px;font:13px/1.55 var(--mono);white-space:pre-wrap}pre code{padding:0;color:inherit;background:none}.copy{position:absolute;top:10px;right:10px;padding:5px 8px;color:#d8ebe0;background:#34453b;border:0;border-radius:5px;cursor:pointer}.callout{margin:24px 0;padding:17px 20px;background:var(--soft);border-left:4px solid var(--green);border-radius:0 7px 7px 0}.callout.warn{background:#fff7e8;border-color:var(--gold)}
+    .hero-art{max-width:var(--measure);margin:34px 0 0}.hero-art img{display:block;width:100%;height:auto}.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:28px 0}.step{position:relative;padding:14px 11px;background:var(--soft);border:1px solid #cfe0d4;border-radius:7px;text-align:center;font-size:13px}.step strong{display:block;color:var(--dark);font-size:15px}.step.run{background:#fff7e8;border-color:#e8c986}.step:not(:last-child)::after{content:"→";position:absolute;z-index:2;right:-12px;top:34%;color:var(--green);font-size:19px;font-weight:bold}.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:var(--measure)}.card{padding:17px 19px;border:1px solid var(--rule);border-radius:8px}.card h3{margin:0 0 7px;color:var(--green);font-size:19px}.card p{margin:0;color:var(--muted);font-size:14px}figure{margin:30px 0}figure img{display:block;width:100%;height:auto;border:1px solid var(--rule);border-radius:8px}figcaption{margin-top:8px;color:var(--muted);font-size:13px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}th{color:#fff;background:var(--green)}tbody tr:nth-child(even){background:#f7f9f7}footer{margin-top:85px;padding-top:25px;color:var(--muted);border-top:3px solid var(--green);font-size:13px}
+    @media(max-width:900px){nav{position:static;width:auto}nav>a:not(.brand){display:inline-block}.brand{max-width:290px}main{margin:0}article{padding:28px 24px 80px}}@media(max-width:650px){.flow{grid-template-columns:1fr}.step:not(:last-child)::after{content:"↓";right:49%;top:auto;bottom:-19px}.cards{grid-template-columns:1fr}h2{font-size:27px}}@media print{nav,#progress,.copy{display:none}main{margin:0}article{max-width:none;padding:0}}
+  </style>
+</head>
+<body>
+<div id="progress"></div>
+<nav aria-label="Guide contents">
+  <a class="brand" href="https://www.expectedparrot.com/"><strong>Expected Parrot</strong><small>Open-source research tools</small></a>
+  <h2>Decision Analysis<br>with MCDA</h2>
+  <div class="part">Orientation</div>
+  <a href="#purpose">1. What MCDA is for</a><a href="#model">2. Structure the decision</a><a href="#jobs">3. Generate EDSL Jobs</a><a href="#ingest">4. Validate evidence</a>
+  <div class="part">Analysis</div>
+  <a href="#methods">5. Choose a method</a><a href="#results">6. Interpret results</a><a href="#robustness">7. Test robustness</a><a href="#handoff">8. Write the report</a>
+  <div class="part">Reference</div>
+  <a href="#quickstart">Command sequence</a><a href="#boundary">Execution boundary</a><a href="#install">Install and contribute</a>
+</nav>
+<main><article>
+  <header>
+    <div class="eyebrow">Expected Parrot · Evidence-first decision support</div>
+    <h1>Make tradeoffs explicit without pretending every choice has one obvious winner.</h1>
+    <p class="dek">MCDA turns alternatives, criteria, stakeholder judgments, and factual evidence into an auditable comparison using weighted-sum or ELECTRE III analysis.</p>
+    <div class="meta"><span>Tool: <strong>MCDA</strong></span><span>Interface: <strong>agent-first JSON CLI</strong></span><span>Inference: <strong>external EDSL Jobs</strong></span></div>
+    <figure class="hero-art"><img src="mcda-package.png" alt="Expected Parrot MCDA artwork: a parrot connects decision criteria to a scored alternatives matrix and ranking"></figure>
+  </header>
+
+  <section id="purpose"><h2>01 · What MCDA is for</h2>
+    <p>Use MCDA when several alternatives must be judged on criteria measured in different units and important to different stakeholders. It preserves the inputs behind a recommendation: who supplied each judgment, how inputs were aggregated, which analysis is primary, and which runs are robustness evidence.</p>
+    <div class="cards"><div class="card"><h3>Clear tradeoffs</h3><p>Weighted sum normalizes performance and shows each criterion's contribution to a total score.</p></div><div class="card"><h3>Difficult tradeoffs</h3><p>ELECTRE III represents indifference, preference, vetoes, and cases where alternatives remain incomparable.</p></div><div class="card"><h3>Real baselines</h3><p>A status quo can be stored as a reference without becoming an eligible recommendation.</p></div><div class="card"><h3>Auditable evidence</h3><p>Jobs, Results, manifests, raw observations, and analysis outputs remain available for inspection.</p></div></div>
+  </section>
+
+  <section id="model"><h2>02 · Structure the decision</h2>
+    <p>Create the project, then define participants, alternatives, and criteria. Factual values can be recorded directly. Criteria needing expert or synthetic judgment can be selected for an EDSL assessment.</p>
+    <pre><code>mcda init vendor_selection
+mcda -C vendor_selection participant add operations "Operations"
+mcda -C vendor_selection participant add finance "Finance"
+mcda -C vendor_selection alt add northstar "Northstar" --type candidate
+mcda -C vendor_selection alt add incumbent "Current vendor" --type reference
+mcda -C vendor_selection crit add cost "Annual cost" --direction min --unit USD
+mcda -C vendor_selection crit add reliability "Reliability" --direction max --unit score</code></pre>
+    <p>Weights remain explicit decision inputs. The assessment estimates how alternatives perform; it does not silently infer what stakeholders should value.</p>
+  </section>
+
+  <section id="jobs"><h2>03 · Generate an EDSL Jobs package</h2>
+    <p><code>assessment build</code> converts participants into EDSL Agents, alternatives into Scenarios, and selected leaf criteria into numerical questions. It serializes that design as <code>jobs.ep</code> and writes a manifest containing the expected participant × alternative × criterion grid.</p>
+    <div class="flow" aria-label="MCDA and EDSL workflow"><div class="step"><strong>Define</strong>decision state</div><div class="step"><strong>Build</strong>Jobs + manifest</div><div class="step run"><strong>Run with ep</strong>external inference</div><div class="step"><strong>Ingest</strong>validated Results</div><div class="step"><strong>Analyze</strong>local methods</div></div>
+    <pre><code>mcda -C vendor_selection assessment build --id expert_round \
+  --criteria reliability
+
+ep inspect vendor_selection/.mcda/assessments/expert_round/jobs.ep
+ep jobs cost vendor_selection/.mcda/assessments/expert_round/jobs.ep
+ep run vendor_selection/.mcda/assessments/expert_round/jobs.ep \
+  --output vendor_selection/.mcda/assessments/expert_round/results.ep</code></pre>
+    <div class="callout"><strong>This is artifact generation, not source-code generation.</strong> MCDA creates a portable EDSL <code>Jobs</code> object. It does not write Python, choose a model, access credentials, or make model calls.</div>
+  </section>
+
+  <section id="ingest"><h2>04 · Validate before changing project state</h2>
+    <p>Ingestion checks provenance, numeric answers, duplicates, and complete coverage against the saved manifest before writing performance observations. By default, one missing or invalid cell causes the import to fail without writing anything.</p>
+    <pre><code>mcda -C vendor_selection assessment ingest expert_round \
+  --results vendor_selection/.mcda/assessments/expert_round/results.ep</code></pre>
+    <div class="callout warn"><strong>Preserve both packages.</strong> <code>jobs.ep</code> records what was asked and of whom; <code>results.ep</code> records answers and model provenance. Use <code>--allow-partial</code> only when an incomplete evidence set is intentional.</div>
+  </section>
+
+  <section id="methods"><h2>05 · Choose the analysis that matches the decision</h2>
+    <table><thead><tr><th>Method</th><th>Use it when</th><th>What it returns</th></tr></thead><tbody><tr><td>Weighted sum</td><td>A compensatory score is defensible and readers need a clear total ranking.</td><td>Normalized performance, weighted contributions, scores, and ranking.</td></tr><tr><td>ELECTRE III</td><td>Small differences may be immaterial, poor performance can veto an option, or incomparability is meaningful.</td><td>Concordance, credibility, pairwise relations, distillation, and candidate ranking.</td></tr></tbody></table>
+    <pre><code>mcda -C vendor_selection analyze run --method weighted-sum --role primary
+mcda -C vendor_selection analyze run --method electre-iii --role alternative-method</code></pre>
+  </section>
+
+  <section id="results"><h2>06 · Read the result, not just the winner</h2>
+    <p>The worked vendor example shows the compensatory view: the score is decomposed so a recommendation can be traced back to criterion-level evidence.</p>
+    <figure><img src="figures/vendor_selection_score_contributions.png" alt="Stacked criterion contributions for vendor candidates"><figcaption>Weighted-sum contributions expose which criteria produce the final ordering.</figcaption></figure>
+    <p>The office-lease example demonstrates why a total score can overstate certainty. ELECTRE III preserves directional outranking and can report that no candidate cleanly dominates the others.</p>
+    <figure><img src="figures/office_lease_credibility.png" alt="ELECTRE III credibility matrix for office lease alternatives"><figcaption>Pairwise credibility is directional: support for A outranking B need not equal support for B outranking A.</figcaption></figure>
+  </section>
+
+  <section id="robustness"><h2>07 · Keep robustness separate from the primary answer</h2>
+    <p>A pooled analysis should be selected as canonical. Participant-specific and alternative-method runs remain evidence about sensitivity; a newer timestamp does not silently replace the primary result.</p>
+    <pre><code>mcda -C vendor_selection analyze run --method weighted-sum --role primary
+mcda -C vendor_selection analyze run --method weighted-sum \
+  --participant finance --role robustness
+mcda -C vendor_selection analyze primary set &lt;analysis-id&gt;</code></pre>
+  </section>
+
+  <section id="handoff"><h2>08 · Hand authoritative evidence to the report writer</h2>
+    <p>MCDA owns the decision evidence, not the final prose. The report guide identifies the canonical analysis, coverage, provenance, references, diagnostics, warnings, and readiness blockers. The calling research agent uses that evidence to author the reader-facing report.</p>
+    <pre><code>mcda -C vendor_selection report guide
+mcda -C vendor_selection report template
+# The calling agent writes writeup/report.md</code></pre>
+  </section>
+
+  <section id="quickstart"><h2>Quick command sequence</h2><ol><li>Run <code>mcda -C &lt;project&gt; guide</code> and follow its <code>next_steps</code>.</li><li>Define alternatives, criteria, participants, weights, and known performance.</li><li>Build <code>jobs.ep</code> only for criteria needing elicitation.</li><li>Inspect and price the package, then execute it externally with <code>ep run</code>.</li><li>Ingest the complete <code>results.ep</code> package.</li><li>Run and explicitly identify the primary analysis.</li><li>Use <code>report guide</code> to hand evidence to the narrative-writing agent.</li></ol></section>
+
+  <section id="boundary"><h2>The execution boundary</h2><p>MCDA performs deterministic project management, validation, aggregation, weighted-sum analysis, and ELECTRE III analysis locally. EDSL performs model execution only after an agent or user explicitly runs the generated package.</p><pre><code>MCDA: design → jobs.ep + manifest
+EDSL: inspect → estimate → run → results.ep
+MCDA: validate → ingest → analyze → evidence handoff
+Agent: interpret → writeup/report.md</code></pre></section>
+
+  <section id="install"><h2>Install and contribute</h2><pre><code>git clone https://github.com/expectedparrot/mcda.git
+cd mcda
+python -m pip install -e '.[edsl]'
+mcda --help
+pytest -q</code></pre><p>MCDA requires Python 3.11 or newer. Run <code>mcda -C &lt;project&gt; guide</code> and <code>mcda -C &lt;project&gt; next</code> as the state-aware source of truth.</p></section>
+  <footer>Expected Parrot · MCDA decision-analysis toolkit</footer>
+</article></main>
+<script>
+  document.querySelectorAll("pre").forEach(function(pre){var b=document.createElement("button");b.className="copy";b.textContent="Copy";b.addEventListener("click",function(){navigator.clipboard.writeText(pre.innerText.replace(/Copy$/," ").trim());b.textContent="Copied";setTimeout(function(){b.textContent="Copy"},1200)});pre.appendChild(b)});
+  addEventListener("scroll",function(){var h=document.documentElement,d=h.scrollHeight-h.clientHeight;document.getElementById("progress").style.width=(d?100*h.scrollTop/d:0)+"%"});
+</script>
+</body>
+</html>
